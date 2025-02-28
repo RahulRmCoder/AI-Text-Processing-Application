@@ -14,7 +14,7 @@ A Django-based web application that uses the Groq API to provide text summarizat
 
 ## Screenshot
 
-![AI Text Processor Screenshot](screenshot.png)
+![AI Text Processor Screenshot](Screenshot.png)
 
 ## Technologies Used
 
