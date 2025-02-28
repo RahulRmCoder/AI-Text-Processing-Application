@@ -12,7 +12,7 @@ A Django-based web application that uses the Groq API to provide text summarizat
 - **Modern UI**: Responsive dark-themed interface
 - **Real-time Processing**: Asynchronous API calls with loading indicators
 
-## Screenshot
+## Screenshots
 
 ![AI Text Processor Screenshot](Screenshot.png)
 ![AI Text Processor Screenshot](Screenshot(1).png)
