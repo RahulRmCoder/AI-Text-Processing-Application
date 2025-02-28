@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container py-5">
+        <h1 class="text-center mb-4">AI Text Processor</h1>
+        
+        <ul class="nav nav-tabs mb-4" id="processorTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="summarize-tab" data-bs-toggle="tab" data-bs-target="#summarize" type="button" role="tab" aria-controls="summarize" aria-selected="true">Summarize</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="rewrite-tab" data-bs-toggle="tab" data-bs-target="#rewrite" type="button" role="tab" aria-controls="rewrite" aria-selected="false">Rewrite</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="processorTabsContent">
+            <!-- Summarize Tab -->
+            <div class="tab-pane fade show active" id="summarize" role="tabpanel" aria-labelledby="summarize-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Text Summarizer</h5>
+                        <p class="card-text">Enter your text below to get a concise summary:</p>
+                        
+                        <form id="summarizeForm">
+                            <div class="mb-3">
+                                <textarea class="form-control" id="summarizeText" rows="6" placeholder="Paste your text here..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Generate Summary</button>
+                        </form>
+                        
+                        <div class="spinner-border text-primary loading-spinner" id="summarizeSpinner" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        
+                        <div class="result-box" id="summaryResult">
+                            <p class="text-muted">Your summary will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rewrite Tab -->
+            <div class="tab-pane fade" id="rewrite" role="tabpanel" aria-labelledby="rewrite-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Text Rewriter</h5>
+                        <p class="card-text">Enter your text and select a style for rewriting:</p>
+                        
+                        <form id="rewriteForm">
+                            <div class="mb-3">
+                                <textarea class="form-control" id="rewriteText" rows="6" placeholder="Paste your text here..." required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="rewriteStyle" class="form-label">Select style:</label>
+                                <select class="form-select" id="rewriteStyle" required>
+                                    <option value="casual">Casual</option>
+                                    <option value="formal">Formal</option>
+                                    <option value="creative">Creative</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Rewrite Text</button>
+                        </form>
+                        
+                        <div class="spinner-border text-primary loading-spinner" id="rewriteSpinner" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        
+                        <div class="result-box" id="rewriteResult">
+                            <p class="text-muted">Your rewritten text will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Summarize form submission
+            document.getElementById('summarizeForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const text = document.getElementById('summarizeText').value.trim();
+                if (!text) return;
+                
+                // Show loading spinner
+                document.getElementById('summarizeSpinner').style.display = 'block';
+                document.getElementById('summaryResult').innerHTML = '<p class="text-muted">Processing...</p>';
+                
+                // Call the API
+                fetch('{% url "summarize" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify({ text: text })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide spinner and display result
+                    document.getElementById('summarizeSpinner').style.display = 'none';
+                    document.getElementById('summaryResult').innerHTML = `
+                        <h6>Summary:</h6>
+                        <p>${data.summary || 'No summary generated.'}</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('summarizeSpinner').style.display = 'none';
+                    document.getElementById('summaryResult').innerHTML = `
+                        <div class="alert alert-danger">
+                            Error: Failed to get summary. Please try again.
+                        </div>
+                    `;
+                });
+            });
+            
+            // Rewrite form submission
+            document.getElementById('rewriteForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const text = document.getElementById('rewriteText').value.trim();
+                const style = document.getElementById('rewriteStyle').value;
+                
+                if (!text) return;
+                
+                // Show loading spinner
+                document.getElementById('rewriteSpinner').style.display = 'block';
+                document.getElementById('rewriteResult').innerHTML = '<p class="text-muted">Processing...</p>';
+                
+                // Call the API
+                fetch('{% url "rewrite" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify({ text: text, style: style })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide spinner and display result
+                    document.getElementById('rewriteSpinner').style.display = 'none';
+                    document.getElementById('rewriteResult').innerHTML = `
+                        <h6>Rewritten in ${style} style:</h6>
+                        <p>${data.rewritten_text || 'No text generated.'}</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('rewriteSpinner').style.display = 'none';
+                    document.getElementById('rewriteResult').innerHTML = `
+                        <div class="alert alert-danger">
+                            Error: Failed to rewrite text. Please try again.
+                        </div>
+                    `;
+                });
+            });
+        });
+    </script>
+{% endblock %}
