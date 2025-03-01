@@ -30,7 +30,7 @@ A Django-based web application that uses the Groq API to provide text summarizat
 
 - **Backend**: Django 5.1.6, Django REST Framework
 - **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
-- **Database**: SQLite3
+- **Database**: MongoDB
 - **Authentication**: Django Authentication System
 - **API Integration**: Groq API (using the Mixtral 8x7b model)
 - **Development**: Python 3.11+
