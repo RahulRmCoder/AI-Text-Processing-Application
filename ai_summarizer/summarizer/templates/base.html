@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,10 +22,23 @@
             --dark-shadow: rgba(0, 0, 0, 0.4);
         }
 
+        /* Making sure the body takes full height */
+        html, body {
+            height: 100%;
+        }
+
         body {
             background-color: var(--dark-bg);
             color: var(--dark-text);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Main content area should take up remaining space */
+        .content-wrapper {
+            flex: 1 0 auto;
         }
 
         /* Navigation bar styling */
@@ -235,6 +248,7 @@
             background-color: var(--dark-card-bg) !important;
             color: var(--dark-text-secondary);
             border-top: 1px solid var(--dark-border);
+            flex-shrink: 0;
         }
 
         /* For placeholder text */
@@ -404,9 +418,11 @@
         </div>
     </nav>
 
-    {% block content %}{% endblock %}
+    <div class="content-wrapper">
+        {% block content %}{% endblock %}
+    </div>
 
-    <footer class="py-4 mt-5">
+    <footer class="py-4 mt-auto">
         <div class="container text-center">
             <p class="mb-0">© 2025 AI Text Processor. Built with Django, MongoDB and Groq API.</p>
         </div>
