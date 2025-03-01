@@ -4,6 +4,28 @@
     <div class="container py-5">
         <h1 class="text-center mb-4">AI Text Processor</h1>
         
+        {% if user.is_authenticated %}
+            <div class="mb-4 d-flex justify-content-between align-items-center">
+                <p class="mb-0">Welcome, {{ user.username }}!</p>
+                <div>
+                    <a href="{% url 'history' %}" class="btn btn-info me-2">View History</a>
+                    <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-warning mb-4">
+                <p class="mb-0">You are not logged in. <a href="{% url 'login' %}">Login</a> or <a href="{% url 'signup' %}">Sign up</a> to save your processing history.</p>
+            </div>
+        {% endif %}
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
         <ul class="nav nav-tabs mb-4" id="processorTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="summarize-tab" data-bs-toggle="tab" data-bs-target="#summarize" type="button" role="tab" aria-controls="summarize" aria-selected="true">Summarize</button>
@@ -22,17 +44,18 @@
                         <p class="card-text">Enter your text below to get a concise summary:</p>
                         
                         <form id="summarizeForm">
+                            {% csrf_token %}
                             <div class="mb-3">
                                 <textarea class="form-control" id="summarizeText" rows="6" placeholder="Paste your text here..." required></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary">Generate Summary</button>
                         </form>
                         
-                        <div class="spinner-border text-primary loading-spinner" id="summarizeSpinner" role="status">
+                        <div class="spinner-border text-primary loading-spinner" id="summarizeSpinner" role="status" style="display: none;">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                         
-                        <div class="result-box" id="summaryResult">
+                        <div class="result-box mt-4" id="summaryResult">
                             <p class="text-muted">Your summary will appear here...</p>
                         </div>
                     </div>
@@ -47,6 +70,7 @@
                         <p class="card-text">Enter your text and select a style for rewriting:</p>
                         
                         <form id="rewriteForm">
+                            {% csrf_token %}
                             <div class="mb-3">
                                 <textarea class="form-control" id="rewriteText" rows="6" placeholder="Paste your text here..." required></textarea>
                             </div>
@@ -61,11 +85,11 @@
                             <button type="submit" class="btn btn-primary">Rewrite Text</button>
                         </form>
                         
-                        <div class="spinner-border text-primary loading-spinner" id="rewriteSpinner" role="status">
+                        <div class="spinner-border text-primary loading-spinner" id="rewriteSpinner" role="status" style="display: none;">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                         
-                        <div class="result-box" id="rewriteResult">
+                        <div class="result-box mt-4" id="rewriteResult">
                             <p class="text-muted">Your rewritten text will appear here...</p>
                         </div>
                     </div>
@@ -85,16 +109,19 @@
                 const text = document.getElementById('summarizeText').value.trim();
                 if (!text) return;
                 
+                // Get CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
                 // Show loading spinner
                 document.getElementById('summarizeSpinner').style.display = 'block';
                 document.getElementById('summaryResult').innerHTML = '<p class="text-muted">Processing...</p>';
                 
                 // Call the API
-                fetch('{% url "summarize" %}', {
+                fetch('{% url "api_summarize" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-CSRFToken': csrfToken,
                     },
                     body: JSON.stringify({ text: text })
                 })
@@ -132,16 +159,19 @@
                 
                 if (!text) return;
                 
+                // Get CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
                 // Show loading spinner
                 document.getElementById('rewriteSpinner').style.display = 'block';
                 document.getElementById('rewriteResult').innerHTML = '<p class="text-muted">Processing...</p>';
                 
                 // Call the API
-                fetch('{% url "rewrite" %}', {
+                fetch('{% url "api_rewrite" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-CSRFToken': csrfToken,
                     },
                     body: JSON.stringify({ text: text, style: style })
                 })
