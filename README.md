@@ -92,6 +92,8 @@ Before you begin, ensure you have the following installed:
 
 ## Project Structure
 
+## Project Structure
+
 ```
 ai_summarizer/
 ├── ai_summarizer/         # Main project settings
@@ -108,20 +110,20 @@ ai_summarizer/
 │   ├── migrations/
 │   ├── models.py          # Data models including ChatHistory
 │   ├── serializers.py     # DRF serializers
+|   ├── services.py
 │   ├── templates/         # HTML templates
-│   │   ├── base.html      # Base template with dark theme
-│   │   ├── index.html     # Main app template
-│   │   ├── login.html     # Authentication templates
-│   │   ├── signup.html
-│   │   └── history.html   # User history page
+│   │   ├── summarizer/    # App-specific templates
+│   │   │   ├── index.html     # Main app template
+│   │   │   ├── login.html     # Authentication templates
+│   │   │   ├── signup.html
+│   │   │   └── history.html   # User history page
+|   |   └── base.html      # Base template with dark theme
 │   ├── tests.py
 │   ├── urls.py            # App URL configurations
-│   └── views.py           # API and view controllers
+│   └── views.py           # API and view controllers         
 ├── .env                   # Environment variables (not tracked in git)
 ├── .gitignore
-├── db.sqlite3             # SQLite database file
 ├── manage.py
-└── requirements.txt       # Project dependencies
 ```
 
 ## API Endpoints
