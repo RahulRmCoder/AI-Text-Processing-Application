@@ -6,15 +6,19 @@ from django.contrib import messages
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-import requests
 import os
+import google.generativeai as genai
 from .models import ChatHistory
 from .forms import SummarizerForm
 from .serializers import SummarizeSerializer, RewriteSerializer, ChatHistorySerializer
 
-# Load API Key
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+# Load API Key and configure Gemini
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+# Default model to use
+DEFAULT_MODEL = "gemini-1.5-flash"
 
 # User Authentication Views
 def signup_view(request):
@@ -74,12 +78,12 @@ def home_view(request):
             input_text = form.cleaned_data['input_text']
             operation = form.cleaned_data['operation']
             
-            # Process text based on operation using Groq API
+            # Process text based on operation using Gemini API
             if operation == 'summarize':
-                output_text = call_groq_api(input_text, "summarize")
+                output_text = call_gemini_api(input_text, "summarize")
             elif operation == 'rewrite':
                 style = form.cleaned_data.get('style', 'formal')  # Default to formal style
-                output_text = call_groq_api(input_text, "rewrite", style=style)
+                output_text = call_gemini_api(input_text, "rewrite", style=style)
             else:
                 output_text = "Unknown operation"
             
@@ -131,14 +135,14 @@ class UserHistoryView(APIView):
 # API Views
 class SummarizeView(APIView):
     """
-    View to summarize input text using Groq API
+    View to summarize input text using Gemini API
     """
     def post(self, request):
         serializer = SummarizeSerializer(data=request.data)
         if serializer.is_valid():
             input_text = serializer.validated_data['text']
             
-            summary = call_groq_api(input_text, "summarize")
+            summary = call_gemini_api(input_text, "summarize")
             
             # Save to history if user is authenticated
             if request.user.is_authenticated:
@@ -163,7 +167,7 @@ class RewriteView(APIView):
             input_text = serializer.validated_data['text']
             style = serializer.validated_data['style']
             
-            rewritten_text = call_groq_api(input_text, "rewrite", style=style)
+            rewritten_text = call_gemini_api(input_text, "rewrite", style=style)
             
             # Save to history if user is authenticated
             if request.user.is_authenticated:
@@ -178,35 +182,78 @@ class RewriteView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Helper function to call Groq API
-def call_groq_api(text, operation_type, style=None):
+# Helper function to call Gemini API
+def call_gemini_api(text, operation_type, style=None):
     """
-    Helper function to call Groq API for text processing
+    Helper function to call Gemini API for text processing with improved prompts
     """
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    if operation_type == "summarize":
-        prompt = f"Summarize this: {text}"
-    elif operation_type == "rewrite":
-        prompt = f"Rewrite this in {style} style: {text}"
-    else:
-        return "Invalid operation type"
-    
-    data = {
-        "model": "mixtral-8x7b-32768",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7 if operation_type == "rewrite" else 0.5
-    }
+    if not GEMINI_API_KEY:
+        return "Error: GEMINI_API_KEY not found. Please set this environment variable."
     
     try:
-        response = requests.post(GROQ_API_URL, json=data, headers=headers)
+        # Adjust temperature based on operation type
+        if operation_type == "summarize":
+            temperature = 0.3  # Lower for more factual summaries
+        elif operation_type == "rewrite":
+            temperature = 0.8  # Higher for more creative rewrites
         
-        if response.status_code == 200:
-            result = response.json()
-            return result.get("choices", [{}])[0].get("message", {}).get("content", "No response generated.")
-        return f"API Error: {response.status_code}"
+        # Configure the generation parameters
+        generation_config = {
+            "temperature": temperature,
+            "top_p": 0.95,
+            "top_k": 40,
+            "max_output_tokens": 2048,
+        }
+        
+        # Create the model instance
+        model = genai.GenerativeModel(
+            model_name=DEFAULT_MODEL,
+            generation_config=generation_config
+        )
+        
+        # Create more specific prompts based on operation type
+        if operation_type == "summarize":
+            prompt = f"""
+            Please provide a in detail, well-structured summary of the following text.
+            Focus on the main points and key details while maintaining clarity:
+            
+            "{text}"
+            
+            Your summary should be comprehensive yet concise.
+            """
+        elif operation_type == "rewrite":
+            style_instructions = {
+                "formal": "Use professional language, proper grammar, and a sophisticated vocabulary. Avoid contractions, slang, or casual expressions.",
+                "casual": "Use relaxed, conversational language that sounds natural but coherent. Include some personality and flow, but maintain proper sentence structure.",
+                "academic": "Use scholarly language with appropriate technical terminology, complex sentence structures, and formal argumentation.",
+                "creative": "Use vivid language, metaphors, and engaging expressions. Be original and expressive while maintaining readability.",
+                "business": "Use clear, direct, and efficient language appropriate for professional communication. Focus on clarity and actionable content."
+            }
+            
+            style_instruction = style_instructions.get(style, "Use appropriate language for the context")
+            
+            prompt = f"""
+            Rewrite the following text in a {style} style:
+            
+            "{text}"
+            
+            Style guidelines: {style_instruction}
+            
+            Provide a single, coherent rewritten version. Do not include multiple variations or use slash separators.
+            """
+        else:
+            return "Invalid operation type"
+        
+        # Generate content
+        response = model.generate_content(prompt)
+        
+        # Check if we have a valid response
+        if response and hasattr(response, 'text'):
+            return response.text.strip()
+        else:
+            return "Error: No response text received from API"
+            
+    except genai.exceptions.GoogleGenerativeAIError as e:
+        return f"Gemini API Error: {str(e)}"
     except Exception as e:
         return f"Error: {str(e)}"
