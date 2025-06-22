@@ -22,6 +22,9 @@ class SummarizerForm(forms.Form):
         ('formal', 'Formal'),
         ('casual', 'Casual'),
         ('creative', 'Creative'),
+        ('academic', 'Academic'),
+        ('business', 'Business')
+
     ]
     
     style = forms.ChoiceField(
