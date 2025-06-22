@@ -1,6 +1,6 @@
 # AI Text Processor
 
-A Django-based web application that uses the Groq API to provide text summarization and style-based text rewriting capabilities. Features user authentication and history tracking.
+A Django-based web application that uses the Gemini API to provide text summarization and style-based text rewriting capabilities. Features user authentication and history tracking.
 
 ## Features
 
@@ -9,6 +9,8 @@ A Django-based web application that uses the Groq API to provide text summarizat
   - Casual
   - Formal
   - Creative
+  - Academic
+  - Business
 - **User Authentication**: 
   - Secure signup and login
   - User-specific processing history
@@ -32,7 +34,7 @@ A Django-based web application that uses the Groq API to provide text summarizat
 - **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
 - **Database**: MongoDB
 - **Authentication**: Django Authentication System
-- **API Integration**: Groq API (using the Mixtral 8x7b model)
+- **API Integration**: Gemini API (using the Gemini-1.5-flash)
 - **Development**: Python 3.11+
 
 ## Prerequisites
@@ -40,7 +42,7 @@ A Django-based web application that uses the Groq API to provide text summarizat
 Before you begin, ensure you have the following installed:
 - Python 3.11 or higher
 - pip (Python package manager)
-- A Groq API key
+- A Gemini API key
 
 ## Installation
 
@@ -68,7 +70,7 @@ Before you begin, ensure you have the following installed:
 
 4. Create a `.env` file in the root directory and add your Groq API key:
    ```
-   GROQ_API_KEY=your_api_key_here
+   GEMINI_API_KEY=your_api_key_here
    ```
 
 5. Apply migrations:
@@ -151,7 +153,7 @@ ai_summarizer/
   ```json
   {
     "text": "Your text to rewrite here...",
-    "style": "casual|formal|creative"
+    "style": "casual|formal|creative|academic|business"
   }
   ```
 - **Response**:
